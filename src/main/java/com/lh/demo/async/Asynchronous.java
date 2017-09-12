@@ -8,10 +8,32 @@ import java.util.concurrent.*;
 public class Asynchronous {
     private final static long count = 1000000000;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
         Asynchronous a = new Asynchronous();
-        a.async();
-        a.sync();
+//        a.async();
+//        a.sync();
+        FutureTask<Integer> task = a.async0();
+        System.out.println(task.get());
+    }
+
+    public FutureTask<Integer> async0() {
+        ExecutorService service = Executors.newFixedThreadPool(2);
+
+        FutureTask<Integer> task = new FutureTask<Integer>(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                Integer sum = 0;
+                for (int i = 0; i < 1000; i++)
+                    sum++;
+
+                return sum;
+            }
+        });
+
+        service.submit(task);
+        service.shutdown();
+
+        return task;
     }
 
     public void async() {
