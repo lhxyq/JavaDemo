@@ -1,55 +1,74 @@
 package com.lh.demo.hotfix;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 /**
- * Created by LH 2446059046@qq.com on 2017/9/11.
+ * Created by LH 2446059046@qq.com on 2017/9/12.
  */
 public class MyClassLoader extends ClassLoader {
+    public String path = "";
 
-    public MyClassLoader() {
+    private MyClassLoader() {
+
     }
 
-    /*private static class LazyClass {
-        public final static MyClassLoader myClassLoader = new MyClassLoader();
+    public MyClassLoader(String path) {
+        this.path = path;
     }
 
     public static MyClassLoader getInstance() {
-        return LazyClass.myClassLoader;
-    }*/
+        return Lazy.classLoader;
+    }
 
-    private byte[] getBytes(String fileName) {
-        try {
-            InputStream in = new FileInputStream(fileName);
-            if (null == in)
-                return null;
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-            byte[] bytes = new byte[1024];
-            int num = 0;
-            while ((num = in.read(bytes))  > 0) {
-                out.write(bytes, 0, num);
-            }
-
-            return out.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+    private static class Lazy {
+        public static final MyClassLoader classLoader = new MyClassLoader();
     }
 
     @Override
     protected Class<?> findClass(String name) {
-        byte[] bytes = getBytes(name);
-        return defineClass(null, bytes, 0, bytes.length);
+        String classFileName = getClassName(name);
+        byte[] bytes = getBytes(path + File.separatorChar + classFileName);
+        return defineClass(name, bytes, 0, bytes.length);
     }
 
-    /*public Object findNewClass(String classPath) throws IOException, InstantiationException, IllegalAccessException {
-        byte[] bytes = getBytes(classPath);
-        return defineClass(null, bytes, 0, bytes.length).newInstance();
+    private byte[] getBytes(String file) {
+        byte[] result;
+        try (InputStream in = new FileInputStream(file);
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            byte[] bytes = new byte[1024];
+            int len = 0;
+
+            while ((len = in.read(bytes)) > 0) {
+                out.write(bytes, 0, len);
+            }
+
+            result = out.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+            result = null;
+        }
+
+        return result;
     }
 
-    public  static <T> T reloadClass(Object o) {
-        return (T) o;
-    }*/
+    private String getClassName(String name) {
+        int index = name.lastIndexOf(".");
+
+        if (index == -1)
+            return name + ".class";
+        else
+            return name.substring(index + 1) + ".class";
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 }
